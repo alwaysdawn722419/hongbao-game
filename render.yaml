@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: hongbao-game-server
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
+    autoDeploy: true
+
+# Render免费版WebSocket优化配置说明：
+# 1. 免费版会在15分钟无活动后休眠
+# 2. 客户端需要实现自动重连机制
+# 3. 建议使用ping/pong保持连接
+# 4. 游戏状态建议客户端缓存，重连后恢复
