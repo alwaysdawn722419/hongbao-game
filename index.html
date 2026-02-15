@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧧 微信红包大作战 - 高度自定义版</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      color: white;
+      padding: 30px 0;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    /* 卡片样式 */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .card-title {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* 输入框 */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* 按钮 */
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .btn-danger {
+      background: #ff4757;
+      color: white;
+    }
+
+    .btn-success {
+      background: #2ed573;
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* 模式选择 */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .mode-card {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .mode-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+    }
+
+    .mode-card.active {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .mode-card .icon {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .mode-card h3 {
+      font-size: 1.1em;
+      margin-bottom: 5px;
+    }
+
+    .mode-card p {
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    /* 设置面板 */
+    .settings-section {
+      margin-bottom: 25px;
+    }
+
+    .settings-section h4 {
+      font-size: 1.1em;
+      margin-bottom: 15px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .setting-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .setting-item label {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .setting-item input[type="number"],
+    .setting-item input[type="range"],
+    .setting-item select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .setting-item input[type="range"] {
+      padding: 5px;
+    }
+
+    .range-value {
+      font-size: 0.85em;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    /* 开关 */
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .toggle-group:last-child {
+      border-bottom: none;
+    }
+
+    .toggle-label {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-label span {
+      font-weight: 600;
+    }
+
+    .toggle-label small {
+      color: #888;
+      font-size: 0.85em;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 26px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #667eea;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    /* 高级设置折叠 */
+    .advanced-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      margin: 20px 0;
+    }
+
+    .advanced-content {
+      display: none;
+    }
+
+    .advanced-content.show {
+      display: block;
+    }
+
+    /* 房间信息 */
+    .room-info {
+      text-align: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .room-code {
+      font-size: 3em;
+      font-weight: bold;
+      letter-spacing: 8px;
+      margin: 15px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .room-code-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    .copy-btn {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    /* 玩家列表 */
+    .player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .player-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #f0f0f0;
+      border-radius: 20px;
+      font-size: 0.95em;
+    }
+
+    .player-tag.host {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+    }
+
+    .player-tag.you {
+      background: #d4edda;
+      border: 1px solid #28a745;
+    }
+
+    .player-tag .team-badge {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .player-tag .team-badge.red {
+      background: #ff4757;
+    }
+
+    .player-tag .team-badge.blue {
+      background: #3742fa;
+    }
+
+    /* 游戏区域 */
+    .game-area {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 16px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .game-info {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      justify-content: space-between;
+      color: white;
+      z-index: 10;
+    }
+
+    .timer {
+      font-size: 2em;
+      font-weight: bold;
+      color: #ffd700;
+    }
+
+    .score-board {
+      display: flex;
+      gap: 20px;
+    }
+
+    .score-item {
+      text-align: center;
+    }
+
+    .score-item .label {
+      font-size: 0.8em;
+      opacity: 0.8;
+    }
+
+    .score-item .value {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    /* 红包 */
+    .packet {
+      position: absolute;
+      width: 80px;
+      height: 100px;
+      cursor: pointer;
+      transition: transform 0.1s;
+      z-index: 5;
+    }
+
+    .packet:hover {
+      transform: scale(1.1);
+    }
+
+    .packet-inner {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(238, 90, 36, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .packet-inner::before {
+      content: '🧧';
+      font-size: 2em;
+    }
+
+    .packet.bomb .packet-inner {
+      background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .packet.bomb .packet-inner::before {
+      content: '💣';
+    }
+
+    .packet-amount {
+      position: absolute;
+      bottom: 5px;
+      font-size: 0.75em;
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* 光标 */
+    .cursor {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 100;
+      transition: all 0.1s;
+    }
+
+    .cursor::after {
+      content: '👆';
+      font-size: 1.2em;
+    }
+
+    .cursor-name {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7em;
+      white-space: nowrap;
+    }
+
+    /* 连击显示 */
+    .combo-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3em;
+      font-weight: bold;
+      color: #ffd700;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      pointer-events: none;
+      animation: comboPop 0.5s ease-out;
+      z-index: 50;
+    }
+
+    @keyframes comboPop {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    /* 技能按钮 */
+    .skill-bar {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .skill-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 1.5em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .skill-btn:hover:not(:disabled) {
+      transform: scale(1.1);
+    }
+
+    .skill-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .skill-btn .cooldown {
+      position: absolute;
+      bottom: -20px;
+      font-size: 0.7em;
+      color: #ffd700;
+    }
+
+    /* 团队技能 */
+    .team-skill-bar {
+      position: absolute;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .team-skill-btn {
+      padding: 10px 20px;
+      border-radius: 20px;
+      border: 2px solid #ffd700;
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd700;
+      font-weight: bold;
+      cursor: pointer;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* 结算页面 */
+    .result-screen {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .winner-display {
+      font-size: 2em;
+      color: #ffd700;
+      margin-bottom: 30px;
+    }
+
+    .score-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .score-table th,
+    .score-table td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .score-table th {
+      background: #f8f9ff;
+      font-weight: 600;
+    }
+
+    .score-table tr.winner {
+      background: #fff3cd;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 30px 0;
+    }
+
+    .stat-card {
+      background: #f8f9ff;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .stat-card .value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .stat-card .label {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    /* 角色选择 */
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .role-card {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .role-card:hover {
+      border-color: #667eea;
+    }
+
+    .role-card.selected {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .role-card.taken {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .role-card .role-icon {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .role-card h4 {
+      margin-bottom: 5px;
+    }
+
+    .role-card p {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    /* 提示信息 */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 25px;
+      background: #333;
+      color: white;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .toast.success {
+      background: #2ed573;
+    }
+
+    .toast.error {
+      background: #ff4757;
+    }
+
+    /* 连接状态 */
+    .connection-status {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      z-index: 1000;
+    }
+
+    .connection-status.connected {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .connection-status.disconnected {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .connection-status.connecting {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    /* 遮罩层 */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .overlay-content {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .overlay-content h2 {
+      margin-bottom: 20px;
+    }
+
+    /* 隐藏 */
+    .hidden {
+      display: none !important;
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .room-code {
+        font-size: 2em;
+        letter-spacing: 4px;
+      }
+
+      .game-area {
+        height: 400px;
+      }
+
+      .packet {
+        width: 60px;
+        height: 75px;
+      }
+    }
+
+    /* 效果 */
+    .blurred {
+      filter: blur(5px);
+      pointer-events: none;
+    }
+
+    .speed-boost {
+      animation: speedPulse 0.2s infinite;
+    }
+
+    @keyframes speedPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+  </style>
+</head>
+<body>
+  <!-- 连接状态 -->
+  <div id="connectionStatus" class="connection-status connecting">连接中...</div>
+
+  <!-- 首页 -->
+  <div id="homePage" class="page">
+    <div class="header">
+      <h1>🧧 微信红包大作战</h1>
+      <p>2-20人实时对战，高度自定义游戏参数</p>
+    </div>
+
+    <div class="container">
+      <div class="card">
+        <h2 class="card-title">👤 输入昵称</h2>
+        <div class="input-group">
+          <input type="text" id="playerName" placeholder="请输入您的昵称" maxlength="12">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">🎮 选择游戏模式</h2>
+        <div class="mode-grid">
+          <div class="mode-card" data-mode="speed">
+            <div class="icon">⚡</div>
+            <h3>手速模式</h3>
+            <p>红包同时出现，比拼点击速度</p>
+          </div>
+          <div class="mode-card" data-mode="memory">
+            <div class="icon">🧠</div>
+            <h3>记忆模式</h3>
+            <p>先显示金额3秒，记忆后抢夺</p>
+          </div>
+          <div class="mode-card" data-mode="reaction">
+            <div class="icon">👀</div>
+            <h3>反应模式</h3>
+            <p>红包随机闪现，3秒消失</p>
+          </div>
+          <div class="mode-card" data-mode="team">
+            <div class="icon">⚔️</div>
+            <h3>团队战模式</h3>
+            <p>2v2起，红蓝对抗+角色技能</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">⚙️ 游戏设置</h2>
+        
+        <!-- 基础设置 -->
+        <div class="settings-section">
+          <h4>📋 基础设置</h4>
+          <div class="settings-grid">
+            <div class="setting-item">
+              <label>总人数 (2-20人)</label>
+              <input type="number" id="settingPlayerCount" min="2" max="20" value="4">
+            </div>
+            <div class="setting-item">
+              <label>游戏时长 (10-120秒)</label>
+              <input type="number" id="settingDuration" min="10" max="120" value="30">
+            </div>
+            <div class="setting-item">
+              <label>红包总数 (2-50个)</label>
+              <input type="number" id="settingPacketCount" min="2" max="50" value="15">
+            </div>
+            <div class="setting-item">
+              <label>总金额 (1-2000元)</label>
+              <input type="number" id="settingTotalAmount" min="1" max="2000" value="100">
+            </div>
+          </div>
+        </div>
+
+        <!-- 金额类型 -->
+        <div class="settings-section">
+          <h4>💰 红包金额类型</h4>
+          <div class="input-group">
+            <select id="settingAmountType">
+              <option value="random">随机分配（二倍均值法）</option>
+              <option value="fixed">固定金额（房主预设）</option>
+              <option value="range">区间随机</option>
+              <option value="equal">平均分配</option>
+            </select>
+          </div>
+          <div id="fixedAmountConfig" class="hidden">
+            <label>预设金额（用逗号分隔，总和需等于总金额）</label>
+            <input type="text" id="fixedAmounts" placeholder="例如: 50,30,20,10,5">
+            <div id="fixedAmountSum" style="margin-top: 8px; color: #667eea;"></div>
+          </div>
+          <div id="rangeAmountConfig" class="hidden">
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label>最小金额</label>
+                <input type="number" id="rangeMin" min="0.01" value="1">
+              </div>
+              <div class="setting-item">
+                <label>最大金额</label>
+                <input type="number" id="rangeMax" value="20">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 高级设置折叠 -->
+        <div class="advanced-toggle" onclick="toggleAdvanced()">
+          <span id="advancedIcon">▶</span>
+          <span>高级设置</span>
+        </div>
+        
+        <div id="advancedSettings" class="advanced-content">
+          <!-- 游戏机制开关 -->
+          <div class="settings-section">
+            <h4>🔧 游戏机制</h4>
+            <div class="toggle-group">
+              <div class="toggle-label">
+                <span>显示他人光标</span>
+                <small>实时显示其他玩家的鼠标位置</small>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settingShowCursor">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-group">
+              <div class="toggle-label">
+                <span>允许负分（踩炸弹）</span>
+                <small>抢到炸弹会扣除分数</small>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settingAllowNegative">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-group">
+              <div class="toggle-label">
+                <span>连击加成</span>
+                <small>连续抢到红包获得额外奖励</small>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settingComboBonus">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-group">
+              <div class="toggle-label">
+                <span>幸运保护（保底金额）</span>
+                <small>确保每个红包至少有一定金额</small>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settingLuckyProtection">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-group team-only hidden">
+              <div class="toggle-label">
+                <span>允许同队抢红包</span>
+                <small>关闭则队友不能抢同一红包</small>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="settingTeamFriendlyFire">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 高级参数 -->
+          <div class="settings-section">
+            <h4>🎛️ 高级参数</h4>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label>炸弹红包概率: <span class="range-value" id="bombRateValue">0%</span></label>
+                <input type="range" id="settingBombRate" min="0" max="50" value="0">
+              </div>
+              <div class="setting-item">
+                <label>红包出现速度: <span class="range-value" id="spawnSpeedValue">1.0x</span></label>
+                <input type="range" id="settingSpawnSpeed" min="0.5" max="3" step="0.1" value="1">
+              </div>
+              <div class="setting-item team-only hidden">
+                <label>技能冷却系数: <span class="range-value" id="skillCDValue">1.0x</span></label>
+                <input type="range" id="settingSkillCD" min="0.5" max="2" step="0.1" value="1">
+              </div>
+              <div class="setting-item team-only hidden">
+                <label>局数 (1-5局)</label>
+                <input type="number" id="settingRounds" min="1" max="5" value="1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <button class="btn btn-primary" onclick="createRoom()">
+            🚀 创建房间
+          </button>
+        </div>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <h2 class="card-title">🏠 加入房间</h2>
+        <div class="input-group">
+          <input type="text" id="joinRoomCode" placeholder="输入6位房间号" maxlength="6" style="text-transform: uppercase; text-align: center; font-size: 1.5em; letter-spacing: 8px;">
+        </div>
+        <button class="btn btn-secondary" onclick="joinRoom()">
+          🚪 加入房间
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 等待房间 -->
+  <div id="waitingRoom" class="page hidden">
+    <div class="header">
+      <h1>⏳ 等待房间</h1>
+    </div>
+    <div class="container">
+      <div class="room-info">
+        <div>房间号</div>
+        <div class="room-code-display">
+          <div class="room-code" id="displayRoomCode">------</div>
+          <button class="copy-btn" onclick="copyRoomCode()">📋 复制</button>
+        </div>
+        <div id="waitingStatus">等待玩家加入...</div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">👥 玩家列表 (<span id="playerCount">0</span>/20)</h3>
+        <div class="player-list" id="playerList"></div>
+      </div>
+
+      <div class="card" id="hostControls">
+        <h3 class="card-title">⚙️ 游戏设置</h3>
+        <div id="roomSettingsDisplay"></div>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-primary" id="startGameBtn" onclick="startGame()" disabled>
+            🎮 开始游戏
+          </button>
+          <p id="startHint" style="margin-top: 10px; color: #888; font-size: 0.9em;">
+            至少需要2人才能开始游戏
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <button class="btn btn-danger" onclick="leaveRoom()">🚪 离开房间</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 角色选择（团队战） -->
+  <div id="roleSelection" class="page hidden">
+    <div class="header">
+      <h1>🎭 选择角色</h1>
+      <p>每个角色都有独特的技能</p>
+    </div>
+    <div class="container">
+      <div class="card">
+        <div class="role-grid" id="roleGrid"></div>
+      </div>
+      <div class="card" style="text-align: center;">
+        <button class="btn btn-primary" id="confirmRoleBtn" onclick="confirmRole()" disabled>
+          ✓ 确认选择
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 游戏页面 -->
+  <div id="gamePage" class="page hidden">
+    <div class="container">
+      <div class="game-area" id="gameArea">
+        <div class="game-info">
+          <div class="timer" id="gameTimer">30</div>
+          <div class="score-board">
+            <div class="score-item">
+              <div class="label">我的分数</div>
+              <div class="value" id="myScore">0</div>
+            </div>
+            <div class="score-item team-only hidden">
+              <div class="label">红队</div>
+              <div class="value" id="redScore">0</div>
+            </div>
+            <div class="score-item team-only hidden">
+              <div class="label">蓝队</div>
+              <div class="value" id="blueScore">0</div>
+            </div>
+          </div>
+        </div>
+        <div id="packetsContainer"></div>
+        <div id="cursorsContainer"></div>
+        <div id="comboContainer"></div>
+        <div class="skill-bar" id="skillBar"></div>
+        <div class="team-skill-bar" id="teamSkillBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结算页面 -->
+  <div id="resultPage" class="page hidden">
+    <div class="header">
+      <h1>🏆 游戏结束</h1>
+    </div>
+    <div class="container">
+      <div class="card result-screen">
+        <div class="winner-display" id="winnerDisplay"></div>
+        
+        <table class="score-table" id="scoreTable">
+          <thead>
+            <tr>
+              <th>排名</th>
+              <th>玩家</th>
+              <th>分数</th>
+              <th>抢到</th>
+              <th>炸弹</th>
+              <th>最高连击</th>
+            </tr>
+          </thead>
+          <tbody id="scoreTableBody"></tbody>
+        </table>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div style="margin-top: 30px;">
+          <button class="btn btn-primary" onclick="backToHome()">🏠 返回首页</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 遮罩层 -->
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-content">
+      <h2 id="overlayTitle">提示</h2>
+      <p id="overlayMessage">...</p>
+      <button class="btn btn-primary" onclick="hideOverlay()">确定</button>
+    </div>
+  </div>
+
+  <script>
+    // ==================== 全局变量 ====================
+    let socket = null;
+    let currentRoom = null;
+    let currentPlayer = null;
+    let selectedMode = 'speed';
+    let selectedRole = null;
+    let gameState = null;
+    let reconnectAttempts = 0;
+    let maxReconnectAttempts = 5;
+
+    // 服务器地址（部署时修改）
+    const SERVER_URL = window.location.origin;
+
+    // 角色定义
+    const ROLES = {
+      striker: { name: '突击手', icon: '⚡', desc: '点击速度+50%，5秒' },
+      disruptor: { name: '干扰者', icon: '🌫️', desc: '敌方1人模糊3秒' },
+      scout: { name: '侦察兵', icon: '🔍', desc: '显示金额3秒' },
+      guardian: { name: '守护者', icon: '🛡️', desc: '免疫+反弹干扰' },
+      lucky: { name: '幸运星', icon: '🍀', desc: '下3个保底5元' }
+    };
+
+    // ==================== 初始化 ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      initSocket();
+      initEventListeners();
+      loadSavedName();
+    });
+
+    function initSocket() {
+      updateConnectionStatus('connecting');
+      
+      socket = io(SERVER_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: maxReconnectAttempts,
+        reconnectionDelay: 1000
+      });
+
+      socket.on('connect', () => {
+        console.log('已连接到服务器');
+        updateConnectionStatus('connected');
+        reconnectAttempts = 0;
+      });
+
+      socket.on('disconnect', () => {
+        console.log('与服务器断开连接');
+        updateConnectionStatus('disconnected');
+      });
+
+      socket.on('reconnect', (attemptNumber) => {
+        console.log(`重新连接成功，第${attemptNumber}次尝试`);
+        showToast('已重新连接到服务器', 'success');
+        
+        // 如果之前在房间中，尝试重新加入
+        if (currentRoom && currentPlayer) {
+          socket.emit('joinRoom', {
+            roomCode: currentRoom,
+            playerName: currentPlayer.name
+          }, (response) => {
+            if (response.success) {
+              currentPlayer.id = response.playerId;
+            }
+          });
+        }
+      });
+
+      socket.on('reconnect_failed', () => {
+        showToast('连接失败，请刷新页面重试', 'error');
+      });
+
+      // 房间事件
+      socket.on('playerJoined', handlePlayerJoined);
+      socket.on('playerLeft', handlePlayerLeft);
+      socket.on('settingsUpdated', handleSettingsUpdated);
+      socket.on('gameStarted', handleGameStarted);
+      socket.on('packetSpawned', handlePacketSpawned);
+      socket.on('packetDisappeared', handlePacketDisappeared);
+      socket.on('packetGrabbed', handlePacketGrabbed);
+      socket.on('playerCursor', handlePlayerCursor);
+      socket.on('skillUsed', handleSkillUsed);
+      socket.on('teamSkillReady', handleTeamSkillReady);
+      socket.on('teamSkillUsed', handleTeamSkillUsed);
+      socket.on('effectApplied', handleEffectApplied);
+      socket.on('effectEnded', handleEffectEnded);
+      socket.on('packetRevealed', handlePacketRevealed);
+      socket.on('grabPhaseStarted', handleGrabPhaseStarted);
+      socket.on('roundEnded', handleRoundEnded);
+      socket.on('gameEnded', handleGameEnded);
+      socket.on('roleSelected', handleRoleSelected);
+    }
+
+    function initEventListeners() {
+      // 模式选择
+      document.querySelectorAll('.mode-card').forEach(card => {
+        card.addEventListener('click', () => {
+          document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          selectedMode = card.dataset.mode;
+          updateModeSettings();
+        });
+      });
+
+      // 金额类型切换
+      document.getElementById('settingAmountType').addEventListener('change', (e) => {
+        document.getElementById('fixedAmountConfig').classList.toggle('hidden', e.target.value !== 'fixed');
+        document.getElementById('rangeAmountConfig').classList.toggle('hidden', e.target.value !== 'range');
+      });
+
+      // 固定金额输入
+      document.getElementById('fixedAmounts').addEventListener('input', validateFixedAmounts);
+
+      // 滑块值显示
+      document.getElementById('settingBombRate').addEventListener('input', (e) => {
+        document.getElementById('bombRateValue').textContent = e.target.value + '%';
+      });
+      document.getElementById('settingSpawnSpeed').addEventListener('input', (e) => {
+        document.getElementById('spawnSpeedValue').textContent = e.target.value + 'x';
+      });
+      document.getElementById('settingSkillCD').addEventListener('input', (e) => {
+        document.getElementById('skillCDValue').textContent = e.target.value + 'x';
+      });
+
+      // 默认选中第一个模式
+      document.querySelector('.mode-card').classList.add('active');
+    }
+
+    function updateModeSettings() {
+      const isTeam = selectedMode === 'team';
+      document.querySelectorAll('.team-only').forEach(el => {
+        el.classList.toggle('hidden', !isTeam);
+      });
+    }
+
+    // ==================== 连接状态 ====================
+    function updateConnectionStatus(status) {
+      const el = document.getElementById('connectionStatus');
+      el.className = 'connection-status ' + status;
+      el.textContent = status === 'connected' ? '已连接' : 
+                       status === 'connecting' ? '连接中...' : '已断开';
+    }
+
+    // ==================== 房间操作 ====================
+    function createRoom() {
+      const playerName = document.getElementById('playerName').value.trim();
+      if (!playerName) {
+        showToast('请输入昵称', 'error');
+        return;
+      }
+
+      const settings = getSettings();
+      
+      socket.emit('createRoom', {
+        playerName,
+        mode: selectedMode,
+        settings
+      }, (response) => {
+        if (response.error) {
+          showToast(response.error, 'error');
+          return;
+        }
+
+        currentRoom = response.roomCode;
+        currentPlayer = { id: response.playerId, name: playerName, isHost: true };
+        
+        saveName(playerName);
+        showWaitingRoom(response);
+      });
+    }
+
+    function joinRoom() {
+      const playerName = document.getElementById('playerName').value.trim();
+      const roomCode = document.getElementById('joinRoomCode').value.trim().toUpperCase();
+
+      if (!playerName) {
+        showToast('请输入昵称', 'error');
+        return;
+      }
+      if (!roomCode || roomCode.length !== 6) {
+        showToast('请输入正确的6位房间号', 'error');
+        return;
+      }
+
+      socket.emit('joinRoom', { roomCode, playerName }, (response) => {
+        if (response.error) {
+          showToast(response.error, 'error');
+          return;
+        }
+
+        currentRoom = response.roomCode;
+        currentPlayer = { id: response.playerId, name: playerName, isHost: false };
+        
+        saveName(playerName);
+        showWaitingRoom(response);
+      });
+    }
+
+    function getSettings() {
+      const amountType = document.getElementById('settingAmountType').value;
+      const amountConfig = {};
+
+      if (amountType === 'fixed') {
+        const amountsStr = document.getElementById('fixedAmounts').value;
+        amountConfig.amounts = amountsStr.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      } else if (amountType === 'range') {
+        amountConfig.min = parseFloat(document.getElementById('rangeMin').value) || 0.01;
+        amountConfig.max = parseFloat(document.getElementById('rangeMax').value) || 20;
+      }
+
+      return {
+        totalAmount: parseFloat(document.getElementById('settingTotalAmount').value) || 100,
+        packetCount: parseInt(document.getElementById('settingPacketCount').value) || 10,
+        duration: parseInt(document.getElementById('settingDuration').value) || 30,
+        amountType,
+        amountConfig,
+        mechanics: {
+          showCursor: document.getElementById('settingShowCursor').checked,
+          allowNegative: document.getElementById('settingAllowNegative').checked,
+          comboBonus: document.getElementById('settingComboBonus').checked,
+          luckyProtection: document.getElementById('settingLuckyProtection').checked,
+          teamFriendlyFire: document.getElementById('settingTeamFriendlyFire').checked
+        },
+        advanced: {
+          bombRate: parseInt(document.getElementById('settingBombRate').value) || 0,
+          spawnSpeed: parseFloat(document.getElementById('settingSpawnSpeed').value) || 1,
+          skillCDMultiplier: parseFloat(document.getElementById('settingSkillCD').value) || 1
+        },
+        totalRounds: parseInt(document.getElementById('settingRounds').value) || 1
+      };
+    }
+
+    function validateFixedAmounts() {
+      const input = document.getElementById('fixedAmounts').value;
+      const amounts = input.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      const sum = amounts.reduce((a, b) => a + b, 0);
+      const total = parseFloat(document.getElementById('settingTotalAmount').value) || 100;
+      const count = parseInt(document.getElementById('settingPacketCount').value) || 10;
+      
+      const sumEl = document.getElementById('fixedAmountSum');
+      sumEl.textContent = `当前: ${amounts.length}个红包，总和: ${sum.toFixed(2)}元 / ${total}元`;
+      sumEl.style.color = Math.abs(sum - total) < 0.01 && amounts.length === count ? '#2ed573' : '#ff4757';
+    }
+
+    function toggleAdvanced() {
+      const content = document.getElementById('advancedSettings');
+      const icon = document.getElementById('advancedIcon');
+      content.classList.toggle('show');
+      icon.textContent = content.classList.contains('show') ? '▼' : '▶';
+    }
+
+    // ==================== 等待房间 ====================
+    function showWaitingRoom(data) {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('waitingRoom').classList.remove('hidden');
+      
+      document.getElementById('displayRoomCode').textContent = currentRoom;
+      updatePlayerList(data.players);
+      
+      // 只有房主显示控制按钮
+      const isHost = currentPlayer.isHost;
+      document.getElementById('hostControls').classList.toggle('hidden', !isHost);
+      
+      if (isHost) {
+        displayRoomSettings(data.settings);
+        updateStartButton(data.players.length);
+      }
+    }
+
+    function displayRoomSettings(settings) {
+      const html = `
+        <p><strong>模式:</strong> ${getModeName(selectedMode)}</p>
+        <p><strong>总金额:</strong> ${settings.totalAmount}元</p>
+        <p><strong>红包数:</strong> ${settings.packetCount}个</p>
+        <p><strong>时长:</strong> ${settings.duration}秒</p>
+        <p><strong>金额类型:</strong> ${getAmountTypeName(settings.amountType)}</p>
+        ${settings.mechanics.comboBonus ? '<p>✓ 连击加成</p>' : ''}
+        ${settings.mechanics.allowNegative ? '<p>✓ 允许负分</p>' : ''}
+        ${settings.advanced.bombRate > 0 ? `<p>💣 炸弹概率: ${settings.advanced.bombRate}%</p>` : ''}
+      `;
+      document.getElementById('roomSettingsDisplay').innerHTML = html;
+    }
+
+    function getModeName(mode) {
+      const names = { speed: '手速模式', memory: '记忆模式', reaction: '反应模式', team: '团队战' };
+      return names[mode] || mode;
+    }
+
+    function getAmountTypeName(type) {
+      const names = { random: '随机分配', fixed: '固定金额', range: '区间随机', equal: '平均分配' };
+      return names[type] || type;
+    }
+
+    function updatePlayerList(players) {
+      document.getElementById('playerCount').textContent = players.length;
+      const listEl = document.getElementById('playerList');
+      listEl.innerHTML = players.map(p => `
+        <div class="player-tag ${p.isHost ? 'host' : ''} ${p.id === currentPlayer.id ? 'you' : ''}">
+          ${p.team ? `<span class="team-badge ${p.team}"></span>` : ''}
+          <span>${p.name} ${p.isHost ? '(房主)' : ''} ${p.id === currentPlayer.id ? '(你)' : ''}</span>
+        </div>
+      `).join('');
+      
+      updateStartButton(players.length);
+    }
+
+    function updateStartButton(count) {
+      const btn = document.getElementById('startGameBtn');
+      const hint = document.getElementById('startHint');
+      btn.disabled = count < 2;
+      
+      if (count >= 2) {
+        hint.innerHTML = '<span style="color: #2ed573;">✓ 已有2人，可立即开始或继续等待</span>';
+      } else {
+        hint.textContent = '至少需要2人才能开始游戏';
+      }
+    }
+
+    function handlePlayerJoined(data) {
+      updatePlayerList(data.players);
+      showToast(`${data.player.name} 加入了房间`, 'success');
+    }
+
+    function handlePlayerLeft(data) {
+      updatePlayerList(data.players);
+      showToast(`${data.playerName} 离开了房间`, 'error');
+    }
+
+    function handleSettingsUpdated(data) {
+      displayRoomSettings(data.settings);
+      showToast('设置已更新', 'success');
+    }
+
+    function copyRoomCode() {
+      navigator.clipboard.writeText(currentRoom).then(() => {
+        showToast('房间号已复制', 'success');
+      });
+    }
+
+    function leaveRoom() {
+      if (socket) {
+        socket.disconnect();
+      }
+      location.reload();
+    }
+
+    // ==================== 开始游戏 ====================
+    function startGame() {
+      socket.emit('startGame', { roomCode: currentRoom }, (response) => {
+        if (response.error) {
+          showToast(response.error, 'error');
+        }
+      });
+    }
+
+    function handleGameStarted(data) {
+      gameState = data;
+      
+      // 团队战先显示角色选择
+      if (data.mode === 'team') {
+        showRoleSelection();
+      } else {
+        startGamePlay();
+      }
+    }
+
+    // ==================== 角色选择 ====================
+    function showRoleSelection() {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('roleSelection').classList.remove('hidden');
+      
+      const grid = document.getElementById('roleGrid');
+      grid.innerHTML = Object.entries(ROLES).map(([key, role]) => `
+        <div class="role-card" data-role="${key}" onclick="selectRole('${key}')">
+          <div class="role-icon">${role.icon}</div>
+          <h4>${role.name}</h4>
+          <p>${role.desc}</p>
+        </div>
+      `).join('');
+    }
+
+    function selectRole(role) {
+      selectedRole = role;
+      document.querySelectorAll('.role-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.role === role);
+      });
+      document.getElementById('confirmRoleBtn').disabled = false;
+    }
+
+    function confirmRole() {
+      if (!selectedRole) return;
+      
+      socket.emit('selectRole', {
+        roomCode: currentRoom,
+        role: selectedRole
+      }, (response) => {
+        if (response.error) {
+          showToast(response.error, 'error');
+        } else {
+          startGamePlay();
+        }
+      });
+    }
+
+    function handleRoleSelected(data) {
+      const card = document.querySelector(`.role-card[data-role="${data.role}"]`);
+      if (card && data.playerId !== currentPlayer.id) {
+        card.classList.add('taken');
+        card.onclick = null;
+      }
+    }
+
+    // ==================== 游戏进行 ====================
+    function startGamePlay() {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('gamePage').classList.remove('hidden');
+      
+      // 显示团队相关UI
+      const isTeam = gameState.mode === 'team';
+      document.querySelectorAll('.team-only').forEach(el => {
+        el.classList.toggle('hidden', !isTeam);
+      });
+
+      // 初始化游戏区域
+      document.getElementById('packetsContainer').innerHTML = '';
+      document.getElementById('cursorsContainer').innerHTML = '';
+      document.getElementById('myScore').textContent = '0';
+      
+      if (isTeam) {
+        document.getElementById('redScore').textContent = '0';
+        document.getElementById('blueScore').textContent = '0';
+        initSkillBar();
+      }
+
+      // 开始倒计时
+      let timeLeft = gameState.settings.duration;
+      document.getElementById('gameTimer').textContent = timeLeft;
+      
+      gameState.timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('gameTimer').textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(gameState.timerInterval);
+        }
+      }, 1000);
+
+      // 显示初始红包（手速和记忆模式）
+      if (gameState.packets && gameState.packets.length > 0) {
+        gameState.packets.forEach(packet => {
+          createPacketElement(packet);
+        });
+      }
+
+      // 光标追踪
+      if (gameState.settings.showCursor) {
+        initCursorTracking();
+      }
+    }
+
+    function createPacketElement(packet) {
+      const el = document.createElement('div');
+      el.className = `packet ${packet.isBomb ? 'bomb' : ''}`;
+      el.id = `packet-${packet.packetId || packet.id}`;
+      el.style.left = packet.x + 'px';
+      el.style.top = packet.y + 'px';
+      
+      const amountText = packet.amount !== null && packet.amount !== undefined ? 
+        `<div class="packet-amount">¥${packet.amount}</div>` : '';
+      
+      el.innerHTML = `
+        <div class="packet-inner">
+          ${amountText}
+        </div>
+      `;
+      
+      el.addEventListener('click', () => grabPacket(packet.packetId || packet.id));
+      document.getElementById('packetsContainer').appendChild(el);
+      
+      // 3秒后消失（反应模式）
+      if (gameState.mode === 'reaction' || packet.disappearIn) {
+        setTimeout(() => {
+          el.remove();
+        }, packet.disappearIn || 3000);
+      }
+    }
+
+    function grabPacket(packetId) {
+      socket.emit('grabPacket', {
+        roomCode: currentRoom,
+        packetId,
+        timestamp: Date.now(),
+        pos: { x: 0, y: 0 } // 简化版，实际应该传点击位置
+      }, (response) => {
+        if (response && response.error) {
+          console.log('抢红包失败:', response.error);
+        }
+      });
+    }
+
+    function handlePacketSpawned(data) {
+      createPacketElement(data);
+    }
+
+    function handlePacketDisappeared(data) {
+      const el = document.getElementById(`packet-${data.packetId}`);
+      if (el) el.remove();
+    }
+
+    function handlePacketGrabbed(data) {
+      // 移除红包
+      const el = document.getElementById(`packet-${data.packetId}`);
+      if (el) {
+        el.style.transform = 'scale(1.3)';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 200);
+      }
+
+      // 更新分数
+      if (data.player.id === currentPlayer.id) {
+        document.getElementById('myScore').textContent = data.player.score.toFixed(2);
+        
+        // 显示连击
+        if (data.combo > 1) {
+          showCombo(data.combo);
+        }
+        
+        // 显示获得金额
+        if (data.isBomb) {
+          showToast(`💣 踩到炸弹！-${Math.abs(data.finalAmount).toFixed(2)}元`, 'error');
+        } else {
+          showToast(`🧧 +${data.amount.toFixed(2)}元`, 'success');
+        }
+      }
+
+      // 更新团队分数
+      if (data.teamScores) {
+        document.getElementById('redScore').textContent = data.teamScores.red.toFixed(2);
+        document.getElementById('blueScore').textContent = data.teamScores.blue.toFixed(2);
+      }
+    }
+
+    function showCombo(combo) {
+      const container = document.getElementById('comboContainer');
+      const el = document.createElement('div');
+      el.className = 'combo-display';
+      el.textContent = `${combo} 连击!`;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+
+    // ==================== 光标追踪 ====================
+    function initCursorTracking() {
+      const gameArea = document.getElementById('gameArea');
+      gameArea.addEventListener('mousemove', (e) => {
+        const rect = gameArea.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        socket.emit('updateCursor', {
+          roomCode: currentRoom,
+          x,
+          y
+        });
+      });
+    }
+
+    function handlePlayerCursor(data) {
+      if (data.playerId === currentPlayer.id) return;
+      
+      let cursor = document.getElementById(`cursor-${data.playerId}`);
+      if (!cursor) {
+        cursor = document.createElement('div');
+        cursor.className = 'cursor';
+        cursor.id = `cursor-${data.playerId}`;
+        cursor.innerHTML = `<div class="cursor-name">${data.playerName}</div>`;
+        document.getElementById('cursorsContainer').appendChild(cursor);
+      }
+      
+      cursor.style.left = data.x + 'px';
+      cursor.style.top = data.y + 'px';
+    }
+
+    // ==================== 技能系统 ====================
+    function initSkillBar() {
+      if (!selectedRole || selectedRole === 'guardian') return;
+      
+      const role = ROLES[selectedRole];
+      const bar = document.getElementById('skillBar');
+      bar.innerHTML = `
+        <button class="skill-btn" id="skillBtn" onclick="useSkill()">
+          ${role.icon}
+          <span class="cooldown" id="skillCD"></span>
+        </button>
+      `;
+    }
+
+    function useSkill() {
+      socket.emit('useSkill', {
+        roomCode: currentRoom,
+        target: null
+      });
+    }
+
+    function handleSkillUsed(data) {
+      showToast(`${data.player.name} 使用了 ${data.skillName}`, 'success');
+    }
+
+    function handleTeamSkillReady(data) {
+      const bar = document.getElementById('teamSkillBar');
+      bar.innerHTML = data.skills.map(s => `
+        <button class="team-skill-btn" onclick="useTeamSkill('${s.id}')">${s.name}</button>
+      `).join('');
+    }
+
+    function useTeamSkill(skillId) {
+      socket.emit('useTeamSkill', {
+        roomCode: currentRoom,
+        skillId
+      });
+      document.getElementById('teamSkillBar').innerHTML = '';
+    }
+
+    function handleTeamSkillUsed(data) {
+      showToast(`${data.player.name} 激活了团队技能: ${data.skill.name}`, 'success');
+    }
+
+    function handleEffectApplied(data) {
+      if (data.effect === 'blurred') {
+        document.getElementById('gameArea').classList.add('blurred');
+      } else if (data.effect === 'speedBoost') {
+        document.body.classList.add('speed-boost');
+      }
+    }
+
+    function handleEffectEnded(data) {
+      if (data.effect === 'blurred') {
+        document.getElementById('gameArea').classList.remove('blurred');
+      } else if (data.effect === 'speedBoost') {
+        document.body.classList.remove('speed-boost');
+      }
+    }
+
+    function handlePacketRevealed(data) {
+      const el = document.getElementById(`packet-${data.packetId}`);
+      if (el) {
+        const inner = el.querySelector('.packet-inner');
+        inner.innerHTML += `<div class="packet-amount">¥${data.amount}</div>`;
+        if (data.isBomb) {
+          el.classList.add('bomb');
+        }
+      }
+    }
+
+    function handleGrabPhaseStarted(data) {
+      showToast('记忆结束！开始抢夺！', 'success');
+      
+      // 隐藏金额
+      document.querySelectorAll('.packet-amount').forEach(el => el.remove());
+    }
+
+    function handleRoundEnded(data) {
+      showToast(`第 ${data.round} 局结束`, 'success');
+    }
+
+    // ==================== 游戏结束 ====================
+    function handleGameEnded(data) {
+      if (gameState.timerInterval) {
+        clearInterval(gameState.timerInterval);
+      }
+      
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('resultPage').classList.remove('hidden');
+
+      // 显示获胜者
+      const winnerEl = document.getElementById('winnerDisplay');
+      if (data.winner === 'tie') {
+        winnerEl.textContent = '🤝 平局！';
+      } else if (data.winner === 'red' || data.winner === 'blue') {
+        winnerEl.textContent = `🏆 ${data.winner === 'red' ? '红队' : '蓝队'}获胜！`;
+      } else if (data.winner) {
+        winnerEl.textContent = `🏆 ${data.winner.name} 获胜！`;
+      } else {
+        winnerEl.textContent = '游戏结束';
+      }
+
+      // 显示分数表
+      const tbody = document.getElementById('scoreTableBody');
+      const sortedScores = [...data.finalScores].sort((a, b) => b.score - a.score);
+      tbody.innerHTML = sortedScores.map((p, i) => `
+        <tr class="${i === 0 ? 'winner' : ''}">
+          <td>${i + 1}</td>
+          <td>${p.name} ${p.team ? `(${p.team === 'red' ? '红' : '蓝'})` : ''}</td>
+          <td>¥${p.score.toFixed(2)}</td>
+          <td>${p.grabCount}</td>
+          <td>${p.bombCount}</td>
+          <td>${p.maxCombo}</td>
+        </tr>
+      `).join('');
+
+      // 显示统计
+      const stats = data.stats;
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card">
+          <div class="value">${stats.grabbedPackets}</div>
+          <div class="label">抢到的红包</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${stats.bombTriggered || 0}</div>
+          <div class="label">踩到的炸弹</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${stats.maxCombo}</div>
+          <div class="label">最高连击</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${stats.avgReactionTime || 0}ms</div>
+          <div class="label">平均反应</div>
+        </div>
+      `;
+    }
+
+    // ==================== 工具函数 ====================
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function showOverlay(title, message) {
+      document.getElementById('overlayTitle').textContent = title;
+      document.getElementById('overlayMessage').textContent = message;
+      document.getElementById('overlay').classList.remove('hidden');
+    }
+
+    function hideOverlay() {
+      document.getElementById('overlay').classList.add('hidden');
+    }
+
+    function backToHome() {
+      location.reload();
+    }
+
+    function saveName(name) {
+      localStorage.setItem('hongbao_playerName', name);
+    }
+
+    function loadSavedName() {
+      const saved = localStorage.getItem('hongbao_playerName');
+      if (saved) {
+        document.getElementById('playerName').value = saved;
+      }
+    }
+  </script>
+</body>
+</html>
